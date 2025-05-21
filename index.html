@@ -9,35 +9,45 @@
   <input id="user-input" type="text" placeholder="Type your message..." />
   <button onclick="sendMessage()">Send</button>
 
+ <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script>
-    let thread_id = null;
-    const backendUrl = "https://fidelidadecase.onrender.com"; // Your Render backend URL
-
-    async function startChat() {
-      const res = await fetch(`${backendUrl}/start_chat`, { method: "POST" });
-      const data = await res.json();
-      thread_id = data.thread_id;
-    }
-
-    async function sendMessage() {
-      const input = document.getElementById("user-input");
-      const message = input.value;
-      if (!message.trim()) return;
-
-      document.getElementById("chat-box").innerHTML += `<p><strong>You:</strong> ${message}</p>`;
-      input.value = "";
-
-      const res = await fetch(`${backendUrl}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ thread_id, message })
-      });
-
-      const data = await res.json();
-      document.getElementById("chat-box").innerHTML += `<p><strong>Assistant:</strong> ${data.response}</p>`;
-    }
-
-    window.onload = startChat;
+      let thread_id = null;
+      const backendUrl = "https://fidelidadecase.onrender.com";
+  
+      async function startChat() {
+        const res = await fetch(`${backendUrl}/start_chat`, { method: "POST" });
+        const data = await res.json();
+        thread_id = data.thread_id;
+      }
+  
+      async function sendMessage() {
+        const input = document.getElementById("user-input");
+        const message = input.value;
+        if (!message.trim()) return;
+  
+        const chatBox = document.getElementById("chat-box");
+        chatBox.innerHTML += `<p><strong>You:</strong> ${message}</p>`;
+        input.value = "";
+  
+        const res = await fetch(`${backendUrl}/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ thread_id, message })
+        });
+  
+        const data = await res.json();
+        
+        // 1. Remove citations like  
+        let cleanText = data.response.replace(/【\d+:\d+†source】/g, '');
+  
+        // 2. Convert Markdown to HTML
+        let htmlResponse = marked.parse(cleanText);
+  
+        // 3. Display it
+        chatBox.innerHTML += `<div><strong>Assistant:</strong> ${htmlResponse}</div>`;
+      }
+  
+      window.onload = startChat;
   </script>
 </body>
 </html>
