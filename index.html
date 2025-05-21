@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fidelidade Assistant</title>
+</head>
+<body>
+  <h1>Fidelidade Chat Assistant</h1>
+  <div id="chat-box"></div>
+  <input id="user-input" type="text" placeholder="Type your message..." />
+  <button onclick="sendMessage()">Send</button>
+
+  <script>
+    let thread_id = null;
+    const backendUrl = "https://fidelidade-assistant.onrender.com"; // Your Render backend URL
+
+    async function startChat() {
+      const res = await fetch(`${backendUrl}/start_chat`, { method: "POST" });
+      const data = await res.json();
+      thread_id = data.thread_id;
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById("user-input");
+      const message = input.value;
+      if (!message.trim()) return;
+
+      document.getElementById("chat-box").innerHTML += `<p><strong>You:</strong> ${message}</p>`;
+      input.value = "";
+
+      const res = await fetch(`${backendUrl}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ thread_id, message })
+      });
+
+      const data = await res.json();
+      document.getElementById("chat-box").innerHTML += `<p><strong>Assistant:</strong> ${data.response}</p>`;
+    }
+
+    window.onload = startChat;
+  </script>
+</body>
+</html>
