@@ -53,6 +53,9 @@
       const chatBox = document.getElementById("chat-box");
       const timestamp = getTimestamp();
       chatBox.innerHTML += `<p><strong>You:</strong> ${message} <span class="timestamp">(${timestamp})</span></p>`;
+      setTimeout(() => {
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }, 100);
       input.value = "";
 
       const res = await fetch(`${backendUrl}/chat`, {
@@ -68,7 +71,9 @@
       const assistantTimestamp = getTimestamp();
 
       chatBox.innerHTML += `<div><strong>Assistant:</strong> ${htmlResponse}<span class="timestamp">(${assistantTimestamp})</span></div>`;
-      chatBox.scrollTop = chatBox.scrollHeight;
+      setTimeout(() => {
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }, 100);
     }
 
     async function resetChat() {
