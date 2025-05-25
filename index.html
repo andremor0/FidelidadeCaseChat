@@ -2,52 +2,81 @@
 <html>
 <head>
   <title>Fidelidade Assistant</title>
+  <style>
+    #chat-box {
+      height: 400px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .timestamp {
+      font-size: 0.75em;
+      color: #888;
+    }
+  </style>
 </head>
 <body>
   <h1>Fidelidade Chat Assistant</h1>
   <div id="chat-box"></div>
-  <input id="user-input" type="text" placeholder="Type your message..." />
+  <input id="user-input" type="text" placeholder="Type your message..." onkeypress="handleKeyPress(event)" />
   <button onclick="sendMessage()">Send</button>
+  <button onclick="resetChat()">Reset</button>
 
- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script>
-      let thread_id = null;
-      const backendUrl = "https://fidelidadecase.onrender.com";
-  
-      async function startChat() {
-        const res = await fetch(`${backendUrl}/start_chat`, { method: "POST" });
-        const data = await res.json();
-        thread_id = data.thread_id;
+    let thread_id = null;
+    const backendUrl = "https://fidelidadecase.onrender.com";
+
+    async function startChat() {
+      const res = await fetch(`${backendUrl}/start_chat`, { method: "POST" });
+      const data = await res.json();
+      thread_id = data.thread_id;
+    }
+
+    function getTimestamp() {
+      const now = new Date();
+      return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function handleKeyPress(event) {
+      if (event.key === "Enter") {
+        sendMessage();
       }
-  
-      async function sendMessage() {
-        const input = document.getElementById("user-input");
-        const message = input.value;
-        if (!message.trim()) return;
-  
-        const chatBox = document.getElementById("chat-box");
-        chatBox.innerHTML += `<p><strong>You:</strong> ${message}</p>`;
-        input.value = "";
-  
-        const res = await fetch(`${backendUrl}/chat`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ thread_id, message })
-        });
-  
-        const data = await res.json();
-        
-        // 1. Remove citations like  
-        let cleanText = data.response.replace(/【\d+:\d+†source】/g, '');
-  
-        // 2. Convert Markdown to HTML
-        let htmlResponse = marked.parse(cleanText);
-  
-        // 3. Display it
-        chatBox.innerHTML += `<div><strong>Assistant:</strong> ${htmlResponse}</div>`;
-      }
-  
-      window.onload = startChat;
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById("user-input");
+      const message = input.value;
+      if (!message.trim()) return;
+
+      const chatBox = document.getElementById("chat-box");
+      const timestamp = getTimestamp();
+      chatBox.innerHTML += `<p><strong>You:</strong> ${message} <span class="timestamp">(${timestamp})</span></p>`;
+      input.value = "";
+
+      const res = await fetch(`${backendUrl}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ thread_id, message })
+      });
+
+      const data = await res.json();
+
+      let cleanText = data.response.replace(/【\d+:\d+†source】/g, '');
+      let htmlResponse = marked.parse(cleanText);
+      const assistantTimestamp = getTimestamp();
+
+      chatBox.innerHTML += `<div><strong>Assistant:</strong> ${htmlResponse}<span class="timestamp">(${assistantTimestamp})</span></div>`;
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function resetChat() {
+      await startChat();
+      document.getElementById("chat-box").innerHTML = "<p><em>Chat reset.</em></p>";
+    }
+
+    window.onload = startChat;
   </script>
 </body>
 </html>
